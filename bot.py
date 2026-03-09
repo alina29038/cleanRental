@@ -14,18 +14,24 @@ from aiogram.fsm.state import State, StatesGroup
 
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
 
 import os
-
+import json
 TOKEN = os.environ["MY_TOKEN"]
 
 ADMIN_ID = 7014188456
 
 logging.basicConfig(level=logging.INFO)
 
-# ===== Google Sheets =====
+# scope для Google Sheets
 scope = ["https://spreadsheets.google.com/feeds","https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name("google_credentials.json", scope)
+
+# читаем JSON из переменной окружения GOOGLE_CREDS
+creds_dict = json.loads(os.environ["GOOGLE_CREDS"])
+creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+
+# подключение к Google Sheets
 client = gspread.authorize(creds)
 sheet = client.open("rent_blacklist_db").worksheet("blacklist")
 
@@ -368,5 +374,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-    

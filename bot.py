@@ -35,8 +35,11 @@ google_creds_b64 = os.getenv("GOOGLE_CREDS_B64")
 if not google_creds_b64:
     raise RuntimeError("GOOGLE_CREDS_B64 не задана")
 
-creds_json = base64.b64decode(google_creds_b64).decode("utf-8")
-creds_dict = json.loads(creds_json)
+try:
+    creds_json = base64.b64decode(google_creds_b64).decode("utf-8")
+    creds_dict = json.loads(creds_json)
+except Exception as e:
+    raise RuntimeError(f"Ошибка GOOGLE_CREDS_B64: {e}")
 
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 

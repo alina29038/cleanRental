@@ -28,7 +28,16 @@ logging.basicConfig(level=logging.INFO)
 scope = ["https://spreadsheets.google.com/feeds","https://www.googleapis.com/auth/drive"]
 
 # читаем JSON из переменной окружения GOOGLE_CREDS
-creds_dict = json.loads(os.environ["GOOGLE_CREDS"])
+import base64
+
+google_creds_b64 = os.getenv("GOOGLE_CREDS_B64")
+
+if not google_creds_b64:
+    raise RuntimeError("GOOGLE_CREDS_B64 не задана")
+
+creds_json = base64.b64decode(google_creds_b64).decode("utf-8")
+creds_dict = json.loads(creds_json)
+
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 
 # подключение к Google Sheets

@@ -232,32 +232,29 @@ async def add_reason(message: Message, state: FSMContext):
 @dp.message(AddBlackList.description)
 async def add_finish(message: Message, state: FSMContext):
 
-    # Проверяем, есть ли уже данные FSM
     data = await state.get_data()
     if not data:
-        # Если данные потерялись — ничего не делаем
         return
 
-    # Сразу ставим state в None, чтобы не попасть повторно
-    await state.clear()  
+    await state.clear()
 
-new_id = get_next_id()
+    new_id = get_next_id()
 
-append_request([
-    new_id,
-    data["fio"],
-    data["company"],
-    data["phone"],
-    data["telegram"],
-    data["reason"],
-    message.text,
-    "pending",
-    datetime.now().strftime("%d.%m.%Y"),
-    "",
-    message.from_user.id
-])
+    append_request([
+        new_id,
+        data["fio"],
+        data["company"],
+        data["phone"],
+        data["telegram"],
+        data["reason"],
+        message.text,
+        "pending",
+        datetime.now().strftime("%d.%m.%Y"),
+        "",
+        message.from_user.id
+    ])
 
-load_records()
+    load_records()
 
     await message.answer("Заявка отправлена на модерацию ✅", reply_markup=main_keyboard)
 

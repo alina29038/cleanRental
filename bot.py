@@ -46,11 +46,37 @@ creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 # подключение к Google Sheets
 client = gspread.authorize(creds)
 sheet = client.open("rent_blacklist_db").worksheet("blacklist")
+HEADERS = [
+    "id", "fio", "company", "phone", "telegram", "reason",
+    "description", "status", "date", "moderator_comment", "telegram_id"
+]
 
+def get_records():
+    return sheet.get_all_records(expected_headers=HEADERS)
+
+def get_next_id():
+    records = get_records()
+    ids = []
+
+    for r in records:
+        value = str(r.get("id", "")).strip()
+        if value.isdigit():
+            ids.append(int(value))
+
+    return max(ids, default=0) + 1
+
+def append_request(row_values):
+    next_row = len(sheet.col_values(1)) + 1
+    sheet.update(
+        f"A{next_row}:K{next_row}",
+        [row_values],
+        value_input_option="USER_ENTERED"
+    )
 records_cache = []
+
 def load_records():
     global records_cache
-    records_cache = sheet.get_all_records()
+    records_cache = get_records()
     return records_cache
 
 def find_row_by_id(rid):
@@ -215,23 +241,23 @@ async def add_finish(message: Message, state: FSMContext):
     # Сразу ставим state в None, чтобы не попасть повторно
     await state.clear()  
 
-    records = load_records()
-    new_id = str(len(records) + 1)
+new_id = get_next_id()
 
-    sheet.append_row([
-        new_id,
-        data["fio"],
-        data["company"],       
-        data["phone"],
-        data["telegram"],
-        data["reason"],
-        message.text,          
-        "pending",
-        datetime.now().strftime("%d.%m.%Y"),
-        "",                    
-        message.from_user.id
-    ])
-    load_records()
+append_request([
+    new_id,
+    data["fio"],
+    data["company"],
+    data["phone"],
+    data["telegram"],
+    data["reason"],
+    message.text,
+    "pending",
+    datetime.now().strftime("%d.%m.%Y"),
+    "",
+    message.from_user.id
+])
+
+load_records()
 
     await message.answer("Заявка отправлена на модерацию ✅", reply_markup=main_keyboard)
 
@@ -274,7 +300,7 @@ async def moderate(message: Message, state: FSMContext):
         return
 
     data = [
-        r for r in sheet.get_all_records()
+        r for r in get_records()
         if str(r["status"]).strip().lower() == "pending"
     ]
 
